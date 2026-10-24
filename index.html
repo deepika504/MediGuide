@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediGuide | Understand Your Medicine</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <header class="navbar">
+        <a href="/" class="logo">
+            <span class="logo-icon">✚</span>
+            MediGuide
+        </a>
+
+        <nav>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <span class="tag">YOUR MEDICINE INFORMATION COMPANION</span>
+
+                <h1>
+                    Understand your medicine.<br>
+                    <span>Make informed decisions.</span>
+                </h1>
+
+                <p>
+                    Explore medicine ingredients, learn about their uses,
+                    and understand important safety information in simple language.
+                </p>
+
+                <!-- Text search form -->
+                <form action="/search" method="GET" class="search-box">
+                    <span class="search-icon">⌕</span>
+                    <input
+                        type="text"
+                        name="q"
+                        id="searchInput"
+                        placeholder="Enter a medicine name or ingredient..."
+                        aria-label="Medicine name or ingredient"
+                        required
+                    >
+                    <button type="submit">Search</button>
+                </form>
+
+                <!-- Quick action buttons -->
+                <div class="quick-actions">
+
+                    <!-- Scan Medicine form -->
+                    <form
+                        action="/analyze-image"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        id="scanForm"
+                    >
+                        <!-- Hidden file input — triggered by the Scan Medicine button -->
+                        <input
+                            type="file"
+                            id="medicineImage"
+                            name="medicineImage"
+                            accept="image/*"
+                            hidden
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="secondary-btn"
+                            id="scanButton"
+                            onclick="scanMedicine()"
+                        >
+                            ▣ Scan Medicine
+                        </button>
+
+                        <!-- Shown only after an image is selected -->
+                        <button
+                            type="submit"
+                            class="secondary-btn"
+                            id="analyzeButton"
+                            hidden
+                        >
+                            Analyze Image
+                        </button>
+                    </form>
+
+                    <!-- Voice search button (outside the scan form) -->
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        onclick="startVoiceSearch()"
+                    >
+                        ♫ Ask by Voice
+                    </button>
+                </div>
+
+                <!-- Image preview — inserted here by JavaScript after file selection -->
+                <div id="scanArea"></div>
+
+                <!-- Processing indicator — visible only while upload is in progress -->
+                <div id="scanStatus" class="scan-status" hidden>
+                    <span class="spinner" aria-hidden="true"></span>
+                    Reading image… please wait.
+                </div>
+
+                <p class="small-note">
+                    Simple information. Better awareness. Safer understanding.
+                </p>
+            </div>
+
+            <div class="hero-visual">
+                <div class="medical-circle">
+                    <div class="cross-symbol">✚</div>
+
+                    <div class="floating-card card-one">
+                        <span>◉</span>
+                        <div>
+                            <strong>Ingredients</strong>
+                            <small>Know what's inside</small>
+                        </div>
+                    </div>
+
+                    <div class="floating-card card-two">
+                        <span>✓</span>
+                        <div>
+                            <strong>Safety information</strong>
+                            <small>Read important warnings</small>
+                        </div>
+                    </div>
+
+                    <div class="floating-card card-three">
+                        <span>✦</span>
+                        <div>
+                            <strong>Easy to understand</strong>
+                            <small>Clear, simple explanations</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="section-heading">
+                <span class="tag">EXPLORE MEDIGUIDE</span>
+                <h2>Medicine information, made simpler.</h2>
+                <p>Learn about the important details behind a medicine.</p>
+            </div>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3>Active Ingredients</h3>
+                    <p>Explore the ingredients listed for a medicine.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">📘</div>
+                    <h3>How It Works</h3>
+                    <p>Understand its general purpose in simple language.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">⚠️</div>
+                    <h3>Safety Awareness</h3>
+                    <p>Review listed side effects and important warnings.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">🔎</div>
+                    <h3>Easy Search</h3>
+                    <p>Find available information by name or ingredient.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="about-section" id="about">
+            <div>
+                <span class="tag">OUR PURPOSE</span>
+                <h2>Knowledge starts with understanding.</h2>
+            </div>
+
+            <p>
+                MediGuide is an educational project designed to make medicine
+                information easier to explore. It does not diagnose conditions,
+                prescribe medicines, or replace advice from a qualified healthcare professional.
+            </p>
+        </section>
+
+        <section class="disclaimer">
+            <strong>Important health notice</strong>
+            <p>
+                MediGuide provides educational information only. Information in this
+                student prototype may be incomplete or require verification.
+                Always consult a qualified healthcare professional for medical advice.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <a href="/" class="logo">✚ MediGuide</a>
+        <p>Built for medicine information and ingredient awareness.</p>
+        <small>Educational use only · Not a prescription tool</small>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

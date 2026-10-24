@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Medicine Information | MediGuide</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* ── Results page layout ───────────────────────────────────────── */
+        .results-page {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 25px;
+            color: #16866a;
+            font-weight: 600;
+        }
+
+        .back-link:hover { text-decoration: underline; }
+
+        .results-heading {
+            margin-bottom: 25px;
+        }
+
+        .results-heading h1 {
+            font-size: 32px;
+            letter-spacing: -1px;
+        }
+
+        .results-heading p {
+            margin-top: 6px;
+            color: #687d77;
+        }
+
+        /* ── Scan notice banner (OCR mode only) ────────────────────────── */
+        .scan-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 22px;
+            padding: 18px 22px;
+            background: #f0faf5;
+            border: 1px solid #b8dece;
+            border-radius: 13px;
+            font-size: 14px;
+            color: #1b5e46;
+            line-height: 1.75;
+        }
+
+        .scan-notice .scan-icon {
+            font-size: 22px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ── Status message (info / warning) ───────────────────────────── */
+        .status-message {
+            margin-bottom: 20px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        .status-message.info {
+            background: #e8f7f1;
+            border: 1px solid #b3dece;
+            color: #155a3f;
+        }
+
+        .status-message.warning {
+            background: #fff8e9;
+            border: 1px solid #f2e4bf;
+            color: #7a5e1a;
+        }
+
+        /* ── OCR raw text preview ───────────────────────────────────────── */
+        .ocr-preview {
+            margin-bottom: 22px;
+        }
+
+        .ocr-preview summary {
+            cursor: pointer;
+            color: #16866a;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 8px 0;
+            user-select: none;
+        }
+
+        .ocr-preview pre {
+            margin-top: 10px;
+            padding: 14px 16px;
+            background: #f5f9f7;
+            border: 1px solid #d6ece3;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #334d44;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        /* ── Medicine result card ───────────────────────────────────────── */
+        .results-count {
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #687d77;
+        }
+
+        .medicine-card {
+            margin: 20px 0;
+            padding: 28px;
+            background: white;
+            border: 1px solid #e2eee9;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(17, 87, 66, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .medicine-card h2 {
+            color: #0c5949;
+            font-size: 25px;
+        }
+
+        /* Shown only for scan results */
+        .possible-match-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            background: #fff3cd;
+            border: 1px solid #f2d97e;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #7a5e1a;
+            white-space: nowrap;
+        }
+
+        .medicine-category {
+            display: inline-block;
+            margin: 5px 0 20px;
+            padding: 6px 12px;
+            background: #e8f7f1;
+            color: #16866a;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .info-item {
+            padding: 15px 0;
+            border-top: 1px solid #e8f0ec;
+        }
+
+        .info-item h3 {
+            margin-bottom: 6px;
+            font-size: 16px;
+        }
+
+        .info-item p {
+            color: #687d77;
+            line-height: 1.8;
+            overflow-wrap: anywhere;
+        }
+
+        /* ── No-results block ───────────────────────────────────────────── */
+        .no-results {
+            padding: 35px;
+            text-align: center;
+            background: white;
+            border: 1px solid #e2eee9;
+            border-radius: 16px;
+        }
+
+        .no-results h2 { color: #0c5949; margin-bottom: 10px; }
+
+        .no-results p {
+            margin: 8px 0;
+            color: #687d77;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Manual search fallback box (shown after a failed scan) */
+        .manual-search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .manual-search-box input {
+            padding: 11px 16px;
+            border: 1px solid #cfe5da;
+            border-radius: 10px;
+            font-size: 14px;
+            width: 260px;
+            outline: none;
+            color: #183b35;
+        }
+
+        .manual-search-box input:focus {
+            border-color: #16866a;
+            box-shadow: 0 0 0 3px rgba(22, 134, 106, 0.1);
+        }
+
+        .manual-search-box button {
+            padding: 11px 20px;
+            background: #16866a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .manual-search-box button:hover { background: #0c5949; }
+
+        .search-again {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 12px 20px;
+            color: white;
+            background: #16866a;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .search-again:hover { background: #0c5949; }
+
+        /* ── Disclaimer ─────────────────────────────────────────────────── */
+        .results-disclaimer {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff8e9;
+            border: 1px solid #f2e4bf;
+            border-radius: 12px;
+            color: #796b50;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* ── Mobile ─────────────────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .results-page { margin: 30px auto; }
+
+            .medicine-card { padding: 20px; }
+
+            .results-heading h1 { font-size: 27px; }
+
+            .card-header { flex-direction: column; }
+
+            .manual-search-box input { width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar">
+        <a href="/" class="logo">
+            <span class="logo-icon">✚</span>
+            MediGuide
+        </a>
+
+        <nav>
+            <a href="/">Home</a>
+            <a href="/#features">Features</a>
+        </nav>
+    </header>
+
+    <main class="results-page">
+
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <div class="results-heading">
+            <span class="tag">MEDICINE INFORMATION</span>
+            <h1>
+                {% if scan_mode %}
+                    Image Scan Results
+                {% else %}
+                    Search Results
+                {% endif %}
+            </h1>
+            {% if query %}
+                <p>
+                    {% if scan_mode %}
+                        Text detected on package: <strong>{{ query }}</strong>
+                    {% else %}
+                        Search term: <strong>{{ query }}</strong>
+                    {% endif %}
+                </p>
+            {% endif %}
+        </div>
+
+        {# ── Scan notice: shown only for OCR results ── #}
+        {% if scan_mode %}
+            <div class="scan-notice">
+                <span class="scan-icon">🔍</span>
+                <div>
+                    <strong>Image scan result</strong> &mdash;
+                    MediGuide extracted text from your image and searched its database.
+                    Results are <em>possible matches only</em> based on package text.
+                    Always check the actual packaging or consult a pharmacist
+                    before using any medicine.
+                </div>
+            </div>
+        {% endif %}
+
+        {# ── Status message (e.g. "no match" or error) ── #}
+        {% if message %}
+            <div class="status-message {% if medicines %}info{% else %}warning{% endif %}">
+                {{ message }}
+            </div>
+        {% endif %}
+
+        {# ── Raw OCR text preview (collapsible) ── #}
+        {% if scan_mode and ocr_text %}
+            <details class="ocr-preview">
+                <summary>▸ Show text extracted from the image</summary>
+                <pre>{{ ocr_text }}</pre>
+            </details>
+        {% endif %}
+
+        {# ── Results ── #}
+        {% if medicines %}
+            <p class="results-count">
+                Found {{ medicines|length }} possible match{% if medicines|length != 1 %}es{% endif %}.
+            </p>
+
+            {% for medicine in medicines %}
+                <article class="medicine-card">
+
+                    <div class="card-header">
+                        <h2>{{ medicine['name'] }}</h2>
+                        {% if scan_mode %}
+                            <span class="possible-match-badge">⚠ Possible match</span>
+                        {% endif %}
+                    </div>
+
+                    <span class="medicine-category">
+                        {{ medicine['category'] or 'General' }}
+                    </span>
+
+                    <div class="info-item">
+                        <h3>Generic Name</h3>
+                        <p>{{ medicine['generic_name'] or 'Information unavailable' }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <h3>Active Ingredient</h3>
+                        <p>{{ medicine['active_ingredient'] or 'Information unavailable' }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <h3>General Uses</h3>
+                        <p>{{ medicine['uses'] or 'Information unavailable' }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <h3>How It Works</h3>
+                        <p>{{ medicine['how_it_works'] or 'Information unavailable' }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <h3>Common Side Effects</h3>
+                        <p>{{ medicine['side_effects'] or 'Information unavailable' }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <h3>Warnings</h3>
+                        <p>{{ medicine['warnings'] or 'Information unavailable' }}</p>
+                    </div>
+
+                    <div class="info-item">
+                        <h3>Brand Information</h3>
+                        <p>{{ medicine['brand_info'] or 'Information unavailable' }}</p>
+                    </div>
+
+                </article>
+            {% endfor %}
+
+        {% else %}
+
+            <div class="no-results">
+                <h2>No matching medicine found</h2>
+
+                {% if scan_mode %}
+                    <p>
+                        The image scan could not find a database match.<br>
+                        You can type the medicine name below to search manually.
+                    </p>
+
+                    {# Manual search fallback — shown only after a failed scan #}
+                    <form action="/search" method="GET" class="manual-search-box">
+                        <input
+                            type="text"
+                            name="q"
+                            placeholder="Type medicine name or ingredient…"
+                            aria-label="Medicine name or ingredient"
+                            required
+                        >
+                        <button type="submit">Search</button>
+                    </form>
+
+                {% else %}
+                    <p>
+                        No record found for "{{ query }}".
+                        Check the spelling or try a different name or ingredient.
+                    </p>
+                    <a href="/" class="search-again">Try Another Search</a>
+                {% endif %}
+            </div>
+
+        {% endif %}
+
+        <div class="results-disclaimer">
+            <strong>Important safety notice</strong>
+            <p>
+                MediGuide is an educational student project, not a medical advice
+                or prescription tool. Database information may be incomplete or
+                unverified. Consult a qualified healthcare professional for any
+                medical decisions, and verify medicine details against official
+                packaging or reliable sources.
+            </p>
+        </div>
+
+    </main>
+
+    <footer>
+        <a href="/" class="logo">✚ MediGuide</a>
+        <p>Medicine information and ingredient awareness.</p>
+        <small>Educational use only · Not a prescription tool</small>
+    </footer>
+
+</body>
+</html>
